@@ -1916,6 +1916,7 @@ class Application(Frame):
         self.master.bind('<Control-s>', self.KEY_CTRL_S)
 
         self.batch      = BooleanVar()
+        self.clean_batch = BooleanVar()
         self.show_axis  = BooleanVar()
         self.show_box   = BooleanVar()
         self.show_v_path= BooleanVar()
@@ -2171,7 +2172,7 @@ class Application(Frame):
 
         opts, args = None, None
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "hbg:f:d:t:",["help","batch","gcode_file","fontdir=","defdir=","text="])
+            opts, args = getopt.getopt(sys.argv[1:], "hbcg:f:d:t:",["help","batch","clean_batch","gcode_file","fontdir=","defdir=","text="])
         except:
             fmessage('Unable interpret command line options')
             sys.exit()
@@ -2184,6 +2185,7 @@ class Application(Frame):
                 fmessage('-d    : default directory (also --defdir)')
                 fmessage('-t    : engrave text (also --text)')
                 fmessage('-b    : batch mode (also --batch)')
+                fmessage('-c    : batch mode for clean cut (also --clean_batch)')
                 fmessage('-h    : print this help (also --help)\n')
                 sys.exit()
             if option in ('-g','--gcode_file'):
@@ -2218,6 +2220,9 @@ class Application(Frame):
                 self.default_text = value
             if option in ('-b','--batch'):
                 self.batch.set(1)
+            if option in ('-c','--clean_batch'):
+                self.batch.set(1)
+                self.clean_batch.set(1)
 
         if self.batch.get():
             fmessage('(F-Engrave Batch Mode)')
@@ -2230,7 +2235,14 @@ class Application(Frame):
             self.DoIt()
             if self.cut_type.get() == "v-carve":
                 self.V_Carve_It()
-            self.WriteGCode()
+                if self.clean_batch.get():
+                    self.V_Carve_It(1)
+
+            if not self.clean_batch.get():
+                self.WriteGCode()
+            else:
+                self.Clean_Path_Calc()
+                self.WRITE_CLEAN_UP()
 
             for line in self.gcode:
                 try:
@@ -8066,11 +8078,12 @@ class Application(Frame):
 
         rbit = self.calc_vbit_dia() / 2.0
         check_coords=[]
-       
-        self.statusbar.configure( bg = 'yellow' )
+
+        if(not self.batch.get()): self.statusbar.configure( bg = 'yellow' )
         if bit_type=="straight":
-            self.statusMessage.set('Calculating Cleanup Cut Paths')
-            self.master.update()
+            if(not self.batch.get()):
+               self.statusMessage.set('Calculating Cleanup Cut Paths')
+               self.master.update()
             self.clean_coords_sort   = []
             clean_dia = float(self.clean_dia.get()) #diameter of cleanup bit
             v_step_len = float(self.v_step_len.get()) 
@@ -8080,11 +8093,12 @@ class Application(Frame):
             check_coords = self.clean_coords
 
         elif bit_type == "v-bit":
-            self.statusMessage.set('Calculating V-Bit Cleanup Cut Paths')
+            if(not self.batch.get()): self.statusMessage.set('Calculating V-Bit Cleanup Cut Paths')
             skip = 1
             clean_step = 1.0
-            
-            self.master.update()
+
+            if(not self.batch.get()):
+                self.master.update()
             self.v_clean_coords_sort = []
 
             clean_dia  = float(self.clean_v.get())  #effective diameter of clean-up v-bit
@@ -8372,18 +8386,20 @@ class Application(Frame):
                         x_old=x1
                         y_old=y1
                         loop_old=loop
-                        
-            self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check()     ,1)
-            self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check()     ,1)
-            self.entry_set(self.Entry_V_CLEAN,     self.Entry_V_CLEAN_Check()     ,1)
+
+            if(not self.batch.get()):
+                self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check()     ,1)
+                self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check()     ,1)
+                self.entry_set(self.Entry_V_CLEAN,     self.Entry_V_CLEAN_Check()     ,1)
 
             if bit_type=="v-bit":
                 self.v_clean_coords_sort = clean_coords_out
             else:
                 self.clean_coords_sort = clean_coords_out
-        self.statusMessage.set('Done Calculating Cleanup Cut Paths')
-        self.statusbar.configure( bg = 'white' )
-        self.master.update_idletasks()
+        if(not self.batch.get()):
+            self.statusMessage.set('Done Calculating Cleanup Cut Paths')
+            self.statusbar.configure( bg = 'white' )
+            self.master.update_idletasks()
     #######################################
     #End Reorganize                       #
     #######################################
