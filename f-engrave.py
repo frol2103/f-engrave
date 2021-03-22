@@ -1916,7 +1916,8 @@ class Application(Frame):
         self.master.bind('<Control-s>', self.KEY_CTRL_S)
 
         self.batch      = BooleanVar()
-        self.clean_batch = BooleanVar()
+        self.clean_batch= BooleanVar()
+        self.batch_out  = StringVar()
         self.show_axis  = BooleanVar()
         self.show_box   = BooleanVar()
         self.show_v_path= BooleanVar()
@@ -2172,7 +2173,7 @@ class Application(Frame):
 
         opts, args = None, None
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "hbcg:f:d:t:",["help","batch","clean_batch","gcode_file","fontdir=","defdir=","text="])
+            opts, args = getopt.getopt(sys.argv[1:], "hbcg:f:d:t:o:",["help","batch","clean-batch","gcode_file","fontdir=","defdir=","text=","--batch-output"])
         except:
             fmessage('Unable interpret command line options')
             sys.exit()
@@ -2185,7 +2186,8 @@ class Application(Frame):
                 fmessage('-d    : default directory (also --defdir)')
                 fmessage('-t    : engrave text (also --text)')
                 fmessage('-b    : batch mode (also --batch)')
-                fmessage('-c    : batch mode for clean cut (also --clean_batch)')
+                fmessage('-c    : batch mode for clean cut (also --clean-batch)')
+                fmessage('-o    : output of batch mode (also --batch-output)')
                 fmessage('-h    : print this help (also --help)\n')
                 sys.exit()
             if option in ('-g','--gcode_file'):
@@ -2220,9 +2222,11 @@ class Application(Frame):
                 self.default_text = value
             if option in ('-b','--batch'):
                 self.batch.set(1)
-            if option in ('-c','--clean_batch'):
+            if option in ('-c','--clean-batch'):
                 self.batch.set(1)
                 self.clean_batch.set(1)
+            if option in ('-o','--batch-output'):
+                self.batch_out.set(value)
 
         if self.batch.get():
             fmessage('(F-Engrave Batch Mode)')
@@ -2244,11 +2248,12 @@ class Application(Frame):
                 self.Clean_Path_Calc()
                 self.WRITE_CLEAN_UP()
 
+            out = open(self.batch_out.get(), 'w') if (self.batch_out.get() != "") else sys.stdout
             for line in self.gcode:
                 try:
-                    sys.stdout.write(line+'\n')
+                    out.write(line+'\n')
                 except:
-                    sys.stdout.write('(skipping line)\n')
+                    out.write('(skipping line)\n')
             sys.exit()
 
         ##########################################################################
