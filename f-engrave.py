@@ -8112,7 +8112,7 @@ class Application(Frame):
             # The next line allows the cutter to get within 1/4 of the
             # v-clean step of the v-carved surface.
             offset = clean_dia/4.0 
-            Radjust   =  rbit + offset
+            Radjust   =  offset
             flat_clean_r = float(self.clean_dia.get())/2.0
             for line in self.clean_coords:
                 XY    = line
@@ -8140,7 +8140,7 @@ class Application(Frame):
                 clean_dia  = float(self.clean_dia.get()) #diameter of cleanup bit
                 step_over  = float(self.clean_step.get()) #percent of cut DIA
                 clean_step = step_over/100.0
-                Rperimeter = rbit + (clean_dia/2.0)
+                Rperimeter = (clean_dia/2.0)
                 
                 ###################################################
                 # Extract straight bit points from clean_coords
